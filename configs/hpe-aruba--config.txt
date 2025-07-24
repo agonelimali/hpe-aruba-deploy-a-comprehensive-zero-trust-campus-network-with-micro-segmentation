@@ -1,0 +1,104 @@
+hostname ZTNA-Core-Switch
+user admin password plaintext StrongAdminPass123 role admin
+ssh server enable
+
+!
+! VLAN and SVI configuration for micro-segmentation
+!
+vlan 10
+   name Finance
+   interface vlan 10
+      ip address 10.1.0.1/24
+      no shutdown
+
+vlan 20
+   name HR
+   interface vlan 20
+      ip address 10.2.0.1/24
+      no shutdown
+
+vlan 30
+   name IT
+   interface vlan 30
+      ip address 10.3.0.1/24
+      no shutdown
+
+!
+! Enable IP routing for inter-VLAN routing (if required by policy)
+!
+ip routing
+
+!
+! Example static route for SIEM/NAC integration (adjust as needed)
+!
+ip route 0.0.0.0/0 10.1.0.254
+
+!
+! Enable MSTP for loop prevention
+!
+spanning-tree mode mstp
+
+!
+! Example access port configuration with 802.1X and NAC
+!
+interface 1/1/1
+   no shutdown
+   vlan access 10
+   aaa authentication port-access
+   aaa authentication port-access client-limit 1
+   aaa authentication port-access critical
+   aaa authentication port-access critical vlan 999
+   aaa authentication port-access mac-based
+   aaa authentication port-access nac
+   aaa authentication port-access reauth-period 3600
+
+interface 1/1/2
+   no shutdown
+   vlan access 20
+
+interface 1/1/3
+   no shutdown
+   vlan access 30
+
+!
+! Example trunk port for uplink to core/distribution
+!
+interface 1/1/48
+   no shutdown
+   vlan trunk native 999 allowed 10,20,30,999
+
+!
+! AAA and RADIUS configuration for 802.1X and NAC (replace with actual server IPs and secrets)
+!
+aaa authentication login privilege-mode
+radius-server host 10.10.10.10 key plaintext RADIUSSecret
+radius-server host 10.10.10.11 key plaintext RADIUSSecret
+radius-server timeout 5
+radius-server retransmit 3
+
+!
+! Device compliance and least-privilege access via downloadable user roles (DUR) from ClearPass/NAC
+!
+aaa authorization user-role enable
+
+!
+! Syslog configuration for SIEM integration (replace with actual SIEM IP)
+!
+logging 10.20.20.20
+logging facility local7
+logging trap informational
+
+!
+! SNMP for monitoring (optional, adjust community and targets)
+!
+snmp-server community "ZTNAmonitor" operator
+snmp-server host 10.20.20.20 community "ZTNAmonitor"
+
+!
+! Save configuration
+!
+write memory
+
+! Repeat interface and VLAN assignments as needed for additional switches in the campus fabric.
+! Adjust VLAN numbers, interface IDs, and IP addresses per switch role and topology.
+! Integrate with Aruba ClearPass Policy Manager for dynamic role assignment, device compliance, and automated incident response workflows.
